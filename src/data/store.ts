@@ -31,6 +31,7 @@ export interface RestockAlert {
   productId: string;
   productName: string;
   requestedBy: string;
+  requestedQty: number;
   timestamp: string;
   resolved: boolean;
 }
@@ -40,17 +41,42 @@ export interface CartItem {
   qty: number;
 }
 
-// Simulated backend actions
+export interface WaitlistEntry {
+  id: string;
+  productId: string;
+  productName: string;
+  userName: string;
+  timestamp: string;
+}
+
+export interface Notification {
+  id: string;
+  userName: string;
+  productName: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+}
+
+// Mutable products array for in-memory stock updates
+let productsData: Product[] = [...(mockData.products as Product[])];
+
 export function checkInventory(itemName: string): { found: boolean; product?: Product } {
-  const product = mockData.products.find(
+  const product = productsData.find(
     (p) => p.name.toLowerCase().includes(itemName.toLowerCase())
   );
-  if (product) return { found: true, product: product as Product };
+  if (product) return { found: true, product };
   return { found: false };
 }
 
 export function getProducts(): Product[] {
-  return mockData.products as Product[];
+  return productsData;
+}
+
+export function updateProductStock(productId: string, newStock: number) {
+  productsData = productsData.map((p) =>
+    p.id === productId ? { ...p, stock: newStock } : p
+  );
 }
 
 export function getOrders(): Order[] {
@@ -65,7 +91,7 @@ export function getOrderById(orderId: string): Order | undefined {
 
 export function searchProducts(query: string): Product[] {
   const q = query.toLowerCase();
-  return (mockData.products as Product[]).filter(
+  return productsData.filter(
     (p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
   );
 }
