@@ -1,0 +1,21 @@
+{
+  "products": [
+    { "id": "p1", "name": "Basmati Rice", "category": "Grains & Staples", "price": 85, "unit": "kg", "stock": 50, "image": "🍚", "description": "Premium aged basmati rice" },
+    { "id": "p2", "name": "Sourdough Bread", "category": "Bakery", "price": 120, "unit": "loaf", "stock": 8, "image": "🍞", "description": "Fresh artisan sourdough" },
+    { "id": "p3", "name": "Organic Milk", "category": "Dairy", "price": 65, "unit": "litre", "stock": 25, "image": "🥛", "description": "Farm-fresh organic whole milk" },
+    { "id": "p4", "name": "Free-Range Eggs", "category": "Dairy", "price": 90, "unit": "dozen", "stock": 15, "image": "🥚", "description": "Free-range country eggs" },
+    { "id": "p5", "name": "Avocados", "category": "Fruits & Vegetables", "price": 60, "unit": "piece", "stock": 0, "image": "🥑", "description": "Ripe Hass avocados" },
+    { "id": "p6", "name": "Cherry Tomatoes", "category": "Fruits & Vegetables", "price": 45, "unit": "pack", "stock": 30, "image": "🍅", "description": "Sweet vine-ripened cherry tomatoes" },
+    { "id": "p7", "name": "Greek Yogurt", "category": "Dairy", "price": 55, "unit": "cup", "stock": 20, "image": "🫙", "description": "Thick and creamy Greek yogurt" },
+    { "id": "p8", "name": "Olive Oil (Extra Virgin)", "category": "Pantry", "price": 350, "unit": "bottle", "stock": 12, "image": "🫒", "description": "Cold-pressed extra virgin olive oil" },
+    { "id": "p9", "name": "Chicken Breast", "category": "Meat & Poultry", "price": 220, "unit": "kg", "stock": 0, "image": "🍗", "description": "Boneless skinless chicken breast" },
+    { "id": "p10", "name": "Fresh Spinach", "category": "Fruits & Vegetables", "price": 30, "unit": "bunch", "stock": 18, "image": "🥬", "description": "Locally grown baby spinach" },
+    { "id": "p11", "name": "Whole Wheat Pasta", "category": "Grains & Staples", "price": 75, "unit": "pack", "stock": 40, "image": "🍝", "description": "100% whole wheat penne" },
+    { "id": "p12", "name": "Honey (Raw)", "category": "Pantry", "price": 180, "unit": "jar", "stock": 6, "image": "🍯", "description": "Pure raw wildflower honey" }
+  ],
+  "orders": [
+    { "id": "ORD-001", "customer": "Priya Sharma", "items": [{"productId": "p1", "name": "Basmati Rice", "qty": 2}, {"productId": "p3", "name": "Organic Milk", "qty": 3}], "total": 365, "status": "delivered", "date": "2026-03-01" },
+    { "id": "ORD-002", "customer": "Rahul Mehta", "items": [{"productId": "p2", "name": "Sourdough Bread", "qty": 1}, {"productId": "p6", "name": "Cherry Tomatoes", "qty": 2}], "total": 210, "status": "preparing", "date": "2026-03-02" },
+    { "id": "ORD-003", "customer": "Anita Das", "items": [{"productId": "p8", "name": "Olive Oil (Extra Virgin)", "qty": 1}], "total": 350, "status": "out-for-delivery", "date": "2026-03-02" }
+  ]
+}
