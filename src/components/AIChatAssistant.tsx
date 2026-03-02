@@ -12,6 +12,11 @@ interface Message {
   content: string;
 }
 
+type PendingAction =
+  | { type: "waitlist_prompt"; productId: string; productName: string }
+  | { type: "waitlist_name_prompt"; productId: string; productName: string }
+  | null;
+
 export function AIChatAssistant() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -23,16 +28,93 @@ export function AIChatAssistant() {
     },
   ]);
   const [input, setInput] = useState("");
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [knownUserName, setKnownUserName] = useState<string | null>(null);
+  const [notificationsShown, setNotificationsShown] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { addToCart, addRestockAlert } = useStore();
+  const { addToCart, addRestockAlert, addToWaitlist, notifications, markNotificationRead } = useStore();
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  // Show notifications when chat opens
+  useEffect(() => {
+    if (!open || !knownUserName || notificationsShown) return;
+
+    const userNotifs = notifications.filter(
+      (n) => n.userName.toLowerCase() === knownUserName.toLowerCase() && !n.read
+    );
+
+    if (userNotifs.length > 0) {
+      const notifMessages: Message[] = userNotifs.map((n) => ({
+        id: `notif-${n.id}`,
+        role: "assistant" as const,
+        content: `🔔 **Notification:** ${n.message}`,
+      }));
+      setMessages((prev) => [...prev, ...notifMessages]);
+      userNotifs.forEach((n) => markNotificationRead(n.id));
+      setNotificationsShown(true);
+    }
+  }, [open, knownUserName, notifications, notificationsShown, markNotificationRead]);
+
+  // Reset notification shown flag when new notifications arrive
+  useEffect(() => {
+    if (knownUserName) {
+      const hasUnread = notifications.some(
+        (n) => n.userName.toLowerCase() === knownUserName.toLowerCase() && !n.read
+      );
+      if (hasUnread) setNotificationsShown(false);
+    }
+  }, [notifications, knownUserName]);
+
   const processMessage = useCallback(
-    (text: string) => {
-      const lower = text.toLowerCase();
+    (text: string): string => {
+      const lower = text.toLowerCase().trim();
+
+      // Handle pending actions (conversation state machine)
+      if (pendingAction) {
+        if (pendingAction.type === "waitlist_prompt") {
+          // User is responding to "Would you like to be notified?"
+          const affirmative = /^(yes|yeah|yep|sure|ok|okay|notify me|please|yea|y|absolutely|definitely)/.test(lower);
+          const negative = /^(no|nah|nope|n|never mind|skip|cancel)/.test(lower);
+
+          if (affirmative) {
+            if (knownUserName) {
+              // Already know the name, add directly
+              addToWaitlist(pendingAction.productId, pendingAction.productName, knownUserName);
+              const productName = pendingAction.productName;
+              setPendingAction(null);
+              return `Got it, **${knownUserName}**! 🔔 You'll be notified when **${productName}** is back in stock.\n\nIs there anything else I can help you with?`;
+            }
+            const saved = { ...pendingAction };
+            setPendingAction({ type: "waitlist_name_prompt", productId: saved.productId, productName: saved.productName });
+            return "Sure! What's your name so we can notify you when it's back in stock?";
+          }
+
+          if (negative) {
+            setPendingAction(null);
+            return "No problem! Let me know if you need anything else. 😊";
+          }
+
+          // Not a clear yes/no — treat as a new query, clear pending
+          setPendingAction(null);
+          // Fall through to normal processing
+        }
+
+        if (pendingAction.type === "waitlist_name_prompt") {
+          // User is providing their name
+          const userName = text.trim();
+          if (userName.length < 1 || userName.length > 50) {
+            return "Please provide a valid name so we can notify you.";
+          }
+          addToWaitlist(pendingAction.productId, pendingAction.productName, userName);
+          setKnownUserName(userName);
+          const productName = pendingAction.productName;
+          setPendingAction(null);
+          return `Got it, **${userName}**! 🔔 We'll notify you as soon as **${productName}** is back in stock.\n\nIs there anything else I can help you with?`;
+        }
+      }
 
       // Intent 3: Order Tracking
       const orderMatch = lower.match(/ord-?\d{3}/i);
@@ -56,8 +138,9 @@ export function AIChatAssistant() {
         }
 
         if (result.product.stock <= 0) {
-          addRestockAlert(result.product.id, result.product.name, "AI Chat Customer");
-          return `😔 Sorry, **${result.product.name}** is currently **out of stock**.\n\nI've notified the store owner to restock it. Would you like to be notified when it's back?\n\n🔔 *A Restock Alert has been sent to the owner's dashboard.*`;
+          addRestockAlert(result.product.id, result.product.name, "AI Chat Customer", qty);
+          setPendingAction({ type: "waitlist_prompt", productId: result.product.id, productName: result.product.name });
+          return `😔 Sorry, **${result.product.name}** is currently **out of stock**.\n\nI've notified the store owner to restock it. Would you like to be notified when it's back?`;
         }
 
         if (qty > result.product.stock) {
@@ -90,7 +173,8 @@ export function AIChatAssistant() {
 
           if (result.product.stock <= 0) {
             addRestockAlert(result.product.id, result.product.name, "AI Chat Customer");
-            return `😔 **${result.product.name}** is currently **out of stock**.\n\nI've generated a restock alert for the store owner. Would you like to be notified when it's available again?\n\n🔔 *Restock Alert sent to Owner Dashboard.*`;
+            setPendingAction({ type: "waitlist_prompt", productId: result.product.id, productName: result.product.name });
+            return `😔 **${result.product.name}** is currently **out of stock**.\n\nI've generated a restock alert for the store owner. Would you like to be notified when it's available again?`;
           }
 
           return `✅ Yes! **${result.product.name}** is in stock.\n\n• **Price:** ₹${result.product.price}/${result.product.unit}\n• **Available:** ${result.product.stock} ${result.product.unit}(s)\n\nWould you like me to add some to your cart?`;
@@ -104,17 +188,18 @@ export function AIChatAssistant() {
 
       return `I'm not sure I understood that. Try asking me:\n\n• "Do you have [item]?"\n• "Add [qty] of [item] to my cart"\n• "Track order ORD-001"\n\nOr type **help** for more info!`;
     },
-    [addToCart, addRestockAlert]
+    [addToCart, addRestockAlert, addToWaitlist, pendingAction, knownUserName]
   );
 
   const handleSend = () => {
     if (!input.trim()) return;
     const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content: input };
     setMessages((prev) => [...prev, userMsg]);
+    const currentInput = input;
     setInput("");
 
     setTimeout(() => {
-      const reply = processMessage(input);
+      const reply = processMessage(currentInput);
       setMessages((prev) => [
         ...prev,
         { id: `a-${Date.now()}`, role: "assistant", content: reply },

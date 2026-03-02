@@ -2,13 +2,13 @@ import { Header } from "@/components/Header";
 import { useStore } from "@/context/StoreContext";
 import { getProducts } from "@/data/store";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Package, AlertTriangle, TrendingUp, ShoppingBag, CheckCircle2, Clock, Truck, Bell,
+  Package, AlertTriangle, TrendingUp, ShoppingBag, CheckCircle2, Clock, Truck,
 } from "lucide-react";
+import { SourcingAlertsPanel } from "@/components/SourcingAlertsPanel";
 
 const statusConfig: Record<string, { label: string; icon: typeof Clock; className: string }> = {
   preparing: { label: "Preparing", icon: Clock, className: "bg-warning/15 text-warning-foreground border-warning/30" },
@@ -17,12 +17,11 @@ const statusConfig: Record<string, { label: string; icon: typeof Clock; classNam
 };
 
 export default function Dashboard() {
-  const { orders, restockAlerts, resolveAlert } = useStore();
+  const { orders, restockAlerts } = useStore();
   const products = getProducts();
 
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
   const lowStock = products.filter((p) => p.stock > 0 && p.stock <= 10);
-  const outOfStock = products.filter((p) => p.stock === 0);
   const unresolvedAlerts = restockAlerts.filter((a) => !a.resolved);
 
   const stats = [
@@ -140,64 +139,7 @@ export default function Dashboard() {
           </div>
 
           {/* Sourcing Alerts Panel */}
-          <aside>
-            <div className="sticky top-20 rounded-lg border bg-card">
-              <div className="flex items-center gap-2 border-b p-4">
-                <Bell className="h-5 w-5 text-destructive" />
-                <h2 className="font-semibold text-card-foreground">Sourcing Alerts</h2>
-                {unresolvedAlerts.length > 0 && (
-                  <Badge className="bg-destructive text-destructive-foreground">
-                    {unresolvedAlerts.length}
-                  </Badge>
-                )}
-              </div>
-              <div className="p-4 space-y-3">
-                {restockAlerts.length === 0 ? (
-                  <div className="py-8 text-center">
-                    <AlertTriangle className="mx-auto h-8 w-8 text-muted-foreground/30" />
-                    <p className="mt-2 text-sm text-muted-foreground">No sourcing alerts yet</p>
-                    <p className="text-xs text-muted-foreground">Alerts appear when customers ask for out-of-stock items via AI chat</p>
-                  </div>
-                ) : (
-                  restockAlerts.map((alert) => (
-                    <div
-                      key={alert.id}
-                      className={`rounded-lg border p-3 transition-colors ${
-                        alert.resolved ? "bg-muted/50 opacity-60" : "bg-destructive/5 border-destructive/20"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="text-sm font-semibold">{alert.productName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Requested by: {alert.requestedBy}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(alert.timestamp).toLocaleString()}
-                          </p>
-                        </div>
-                        {!alert.resolved && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => resolveAlert(alert.id)}
-                            className="text-xs h-7"
-                          >
-                            Resolve
-                          </Button>
-                        )}
-                      </div>
-                      {alert.resolved && (
-                        <Badge variant="outline" className="mt-2 text-xs bg-success/15 text-success border-success/20">
-                          <CheckCircle2 className="mr-1 h-3 w-3" /> Resolved
-                        </Badge>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </aside>
+          <SourcingAlertsPanel />
         </div>
       </div>
     </div>
