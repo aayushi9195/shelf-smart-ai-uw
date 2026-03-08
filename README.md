@@ -1,4 +1,17 @@
-# Welcome to your Lovable project
+## ShelfSmart AI 
+Built for the UW iSchool x Salesforce x Lovable Hackathon (March 2026).
+
+## The Problem
+Small grocers face 20-30% aggregator fees while maintaining thin 2-5% margins. ShelfSmart AI eliminates these fees by providing an agentic, self-managed solution.
+
+## Key Agentic Features
+* Smart Ordering: Natural language processing to check stock and place orders.
+* Backend Actions: Implemented checkInventory() and notifyOwnerRestock() to simulate enterprise-grade operations.
+* Edge Case Handling: Automatically triggers a "Sourcing Alert" on the owner dashboard if stock is unavailable.
+
+## Tech Stack
+* Frontend: React, Tailwind CSS, Shadcn UI.
+* Logic: Agentforce-inspired implementation strategy for autonomous operations
 
 ## Project info
 
